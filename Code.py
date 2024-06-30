@@ -93,7 +93,7 @@ with tab4:
                           projection="natural earth",
                           title="Geographic Distribution of Athletes' Birth Countries")
     st.plotly_chart(fig4, use_container_width=True)
-
+### TAB 5: PLOT BOX 
 st.header("Relationship between Height and Weight of Olympic Athletes")
 data_filtered = data.dropna(subset=['Height', 'Weight'])
 fig_scatter = px.scatter(data_filtered, x='Height', y='Weight', 
