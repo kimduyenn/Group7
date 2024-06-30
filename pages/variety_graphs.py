@@ -7,11 +7,11 @@ import plotly.express as px
 data = pd.read_excel('/mnt/data/Athlete_events.xlsx')
 
 # Set the page configuration
-st.set_page_config(page_title="Project Python 2", page_icon=":tada:", layout="wide")
+st.set_page_config(page_title="PYTHON 2 - BUSINESS IT 2", page_icon="🥰", layout="wide")
 
 # HEADER SECTION
 with st.container():
-    st.subheader("Hi :wave: we're from group 4 class Business IT2")
+    st.subheader("Hi :wave: we're from group 7 class Business IT2")
     st.title("What is there more to know about Olympic Athletes?")
     st.write("Apart from their achievements, join us today on this app to get to know the athletes' Birth Countries and Average Age of Participation!") 
 
