@@ -8,3 +8,5 @@ matplotlib==3.4.3
 Pillow==8.3.2
 streamlit-extras==0.1.1
 annotated_text==1.0.1
+geopandas
+seaborn
