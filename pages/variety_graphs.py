@@ -53,14 +53,6 @@ sport = st.sidebar.selectbox('Select a Sport', sport_list)
 # Filter data further based on the selected sport
 filtered_data = filtered_data[filtered_data['Sport'] == sport]
 
-# Plotting - Histogram for Age Distribution
-st.header("Age Distribution of Athletes")
-fig, ax = plt.subplots()
-sns.histplot(filtered_data['Age'].dropna(), kde=True, ax=ax)
-ax.set_title(f'Age Distribution of Athletes in {sport} from {country}')
-ax.set_xlabel('Age')
-ax.set_ylabel('Frequency')
-st.pyplot(fig)
 
 # Plotting - Pie Chart for Medal Distribution
 st.header("Medal Distribution")
@@ -87,17 +79,3 @@ fig_donut = go.Figure(data=[go.Pie(labels=gender_counts.index, values=gender_cou
 fig_donut.update_layout(title_text=f'Gender Distribution in {sport} from {country}')
 st.plotly_chart(fig_donut)
 
-# Plotting - Tree Map for Events in the Selected Sport
-st.header("Events in the Selected Sport")
-event_counts = filtered_data['Event'].value_counts().reset_index()
-event_counts.columns = ['Event', 'Count']
-fig_tree = px.treemap(event_counts, path=['Event'], values='Count', title=f'Events in {sport} from {country}')
-st.plotly_chart(fig_tree)
-
-# Plotting - Heatmap for Number of Athletes by Country and Year
-st.header("Number of Athletes by Country and Year")
-heatmap_data = filtered_data.groupby(['Country', 'Year']).size().unstack(fill_value=0)
-fig_heatmap = px.imshow(heatmap_data, labels=dict(x="Year", y="Country", color="Number of Athletes"),
-                        title=f'Number of Athletes by Country and Year in {sport}', 
-                        x=heatmap_data.columns, y=heatmap_data.index)
-st.plotly_chart(fig_heatmap)
