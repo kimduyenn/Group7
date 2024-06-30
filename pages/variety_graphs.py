@@ -1,81 +1,216 @@
-import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+import streamlit as st
+import altair as alt
 import plotly.express as px
-import plotly.graph_objects as go
-color_theme_list = ['blues', 'cividis', 'greens', 'inferno', 'magma', 'plasma', 'reds', 'rainbow', 'turbo', 'viridis']
 
-# Load the data
-file_path = 'Athlete_events.xlsx'
-df = pd.read_excel(file_path)
+# Read the data from Excel
+data = pd.read_excel('/mnt/data/Athlete_events.xlsx')
 
-# Title of the app
-st.title('Olympic Athletes Analysis')
+# Set the page configuration
+st.set_page_config(page_title="Project Python 2", page_icon=":tada:", layout="wide")
 
-# Sidebar for user input
-st.sidebar.title("Filter Options")
+# HEADER SECTION
+with st.container():
+    st.subheader("Hi :wave: we're from group 4 class Business IT2")
+    st.title("What is there more to know about Olympic Athletes?")
+    st.write("Apart from their achievements, join us today on this app to get to know the athletes' Birth Countries and Average Age of Participation!") 
 
-# Convert NOC to country names using an example mapping (you should replace this with a complete mapping)
-noc_to_country = {
-    'USA': 'United States',
-    'GBR': 'United Kingdom',
-    'CHN': 'China',
-    'RUS': 'Russia',
-    'GER': 'Germany',
-    'AUS': 'Australia',
-    # Add all other NOCs with their respective country names
+# OUR DATASET
+url = "https://www.kaggle.com/datasets/heesoo37/120-years-of-olympic-history-athletes-and-results"
+with st.container():
+    st.write("---")
+    left_column, right_column = st.columns(2)
+    with left_column: st.header("Our dataset :sparkles:")
+    st.markdown(f"[Click here to see the original dataset]({url})")
+    st.write("##")
+    st.write(
+        """ Our refined data frame contains several main variables as follows:
+        \n - *Name*: Name of the athlete
+        \n - *Sport*: Sport they competed in
+        \n - *Event*: Specific event they participated in
+        \n - *Medal*: Type of medal they won (if any)
+        \n - *NOC*: National Olympic Committee (country) they represented
+        \n - *Age*: Age of the athlete at the time of the event """)
+
+st.divider()
+st.header("Top Birth Countries and Age Distribution Chart")
+st.write("Discover these two graphs below with us")
+
+# Add Sidebar
+st.sidebar.write('**:bulb: Reporting to Dr. Tan Duc Do**')
+st.sidebar.write('**:bulb: Group 4 Business IT 2 Members:**')
+
+# Add content to the main area
+with st.sidebar:
+    st.write('Tran Thi Thuy Trang')
+    st.write('Tran Ngoc My Thao')
+    st.write('Luong Nu Mai Nhung')
+    st.write('Kim Duyen')
+
+
+# Initial 2 tabs for each interactive graph
+tab1, tab2 = st.tabs(["Bar Chart", "Boxplot Chart"])
+
+### TAB 1: BAR CHART
+
+# Calculate the value counts of NOC (National Olympic Committees)
+df = data['NOC'].value_counts()
+
+# Set the initial value for the slider
+value = 5
+
+# Get the top N countries with the most participating athletes
+df1 = df.nlargest(n=value, keep='all')
+
+# Define color palette for the bars
+color1 = ["#19376D", "#576CBC", "#A5D7E8", "#66347F", "#9E4784", "#D27685", "#D4ADFC", "#F2F7A1", "#FB2576", "#E94560"]
+
+# Add the slider
+value = tab1.slider("Number of Countries", min_value=1, max_value=10, step=1, value=value)
+
+# Update the top N countries based on the slider value
+df1 = df.nlargest(n=value, keep='all')
+color1 = color1[:len(df1)]
+
+# Update the title of the plot
+tab1.subheader("Top {} Countries That Had The Most Olympic Athletes".format(value))
+
+# Create the bar chart using Altair
+bar_data = pd.DataFrame({"Country": df1.index, "Number of Athletes": df1.values, "Color": color1})
+bars = alt.Chart(bar_data).mark_bar().encode(
+    x=alt.X('Country', sort=None),
+    y=alt.Y('Number of Athletes'),
+    color=alt.Color('Color', scale=None),
+    tooltip=['Country', 'Number of Athletes']
+).properties(width=1400)
+
+# Rotate x-axis labels for better readability
+bars = bars.configure_axisX(labelAngle=0)
+
+# Display the chart using Streamlit
+tab1.altair_chart(bars, use_container_width=True)
+
+### TAB 2: BOXPLOT CHART
+
+# Filter data to remove rows with missing 'Age'
+data = data.dropna(subset=['Age'])
+
+# Sort the data by Age in ascending order
+data_sorted = data.sort_values(by='Age', ascending=True)
+
+# Create a subset of data for Summer and Winter Olympics
+summer = data_sorted[data_sorted['Season'] == 'Summer']
+winter = data_sorted[data_sorted['Season'] == 'Winter']
+
+# Create a palette color for seasons
+season_colors = {
+    'Summer': '#FFD700',
+    'Winter': '#00BFFF'
 }
 
-# Add a full mapping for all NOCs from a reliable source or manually add the NOCs
-df['Country'] = df['NOC'].map(noc_to_country)
+# Add the title of the plot
+tab2.subheader("Age Distribution of Olympic Athletes")
 
-# List of unique countries for selection, remove NaN values if any
-country_list = df['Country'].dropna().unique()
-country_list.sort()
+# Store the initial value of widgets in session state
+if "disabled" not in st.session_state:
+    st.session_state.disabled = False
 
-# Sidebar for country selection
-country = st.sidebar.selectbox('Select a Country', country_list)
+col1, col2, col3 = tab2.columns([2,2,3])
+with col1:
+    overview = st.checkbox("Overview of all seasons", key="disabled")
+    age_type = st.radio("Choose a value you want to look for 👇",
+                        ["Oldest age", "Median age", "Youngest age"],
+                        key="visibility",
+                        # label_visibility= "visible",
+                        disabled= st.session_state.disabled)
+with col2:
+    rank = st.selectbox("Rank", ("Maximum", "Minimum"), key="rank",
+                        # label_visibility= "visible",
+                        disabled= st.session_state.disabled)
+with col3:
+    if overview:
+        st.write("Below is all seasons.")
+    else:
+        st.write("Below are all seasons with")
+        st.write("the {} value of the {} in each group.".format(rank.lower(), age_type.lower()))
+        st.write(":green[**Note: Outlier values are accepted.**]")
 
-# Filter data based on the selected country
-filtered_data = df[df['Country'] == country]
+# Create a container for displaying the boxplots
+with tab2.container():
+    
+    # define a function to find the season as requested
+    def find_season(data, age_type, rank):
+        if age_type == "Oldest age":
+            if rank == "Maximum":
+                season = data.groupby('Season')['Age'].max().idxmax()
+            else:
+                season = data.groupby('Season')['Age'].max().idxmin()
+        elif age_type == "Median age":
+            if rank == "Maximum":
+                season = data.groupby('Season')['Age'].median().idxmax()
+            else:
+                season = data.groupby('Season')['Age'].median().idxmin()
+        elif age_type == "Youngest age":
+            if rank == "Maximum":
+                season = data.groupby('Season')['Age'].min().idxmax()
+            else:
+                season = data.groupby('Season')['Age'].min().idxmin()
+        return season
+    
+    # Create two columns for displaying the boxplots
+    box1, box2 = tab2.columns(2)
+    with box1:
+        # Add label above the first boxplot
+        st.subheader("Summer Olympics")
+        
+        # Display the first boxplot
+        if overview:
+            fig1 = px.box(summer, y="Age", x="Season", color="Season", color_discrete_map=season_colors)
+            fig1.update_layout(showlegend=False)  # Remove legend from the first plot
+        else:
+            summer_season = find_season(summer, age_type, rank)
+            summer_display_season = summer[summer['Season'].isin([summer_season])]
+            fig1 = px.box(summer_display_season, y="Age", x="Season", color="Season", color_discrete_map=season_colors)
+            fig1.update_layout(showlegend=False)  # Remove legend from the first plot
 
-# Introduction
-st.markdown("""
-## Introduction
-This dashboard provides a comprehensive analysis of Olympic athletes' data. Use the sidebar to filter by country and sport, and explore various visualizations including age distribution, medal distribution, country participation, and more.
-""")
-
-# Sidebar for sport selection
-sport_list = filtered_data['Sport'].unique()
-sport = st.sidebar.selectbox('Select a Sport', sport_list)
-
-# Filter data further based on the selected sport
-filtered_data = filtered_data[filtered_data['Sport'] == sport]
+        st.plotly_chart(fig1, use_container_width=True)
 
 
-# Plotting - Pie Chart for Medal Distribution
-st.header("Medal Distribution")
-medal_counts = filtered_data['Medal'].value_counts()
-fig_pie = px.pie(values=medal_counts.values, names=medal_counts.index, title=f'Medal Distribution in {sport} from {country}')
-st.plotly_chart(fig_pie)
+    with box2:
+        # Add label above the second boxplot
+        st.subheader("Winter Olympics")
 
-# Plotting - Bar Chart for Sport Participation within the Country
-st.header("Top 10 Sports by Number of Athletes")
-sport_counts = df[df['Country'] == country]['Sport'].value_counts().head(10)
-fig_bar = px.bar(x=sport_counts.index, y=sport_counts.values, labels={'x':'Sport', 'y':'Number of Athletes'}, title=f'Top 10 Sports by Number of Athletes in {country}')
-st.plotly_chart(fig_bar)
+        # Display the second boxplot
+        if overview:
+            fig2 = px.box(winter, y="Age", x="Season", color="Season", color_discrete_map=season_colors)
+            fig2.update_layout(showlegend=False)  # Remove legend from the second plot
+        else:
+            winter_season = find_season(winter, age_type, rank)
+            winter_display_season = winter[winter['Season'].isin([winter_season])]
+            fig2 = px.box(winter_display_season, y="Age", x="Season", color="Season", color_discrete_map=season_colors)
+            fig2.update_layout(showlegend=False)  # Remove legend from the second plot
 
-# Plotting - Line Graph for Number of Athletes over the Years
-st.header("Number of Athletes Over the Years")
-year_counts = filtered_data['Year'].value_counts().sort_index()
-fig_line = px.line(x=year_counts.index, y=year_counts.values, labels={'x':'Year', 'y':'Number of Athletes'}, title=f'Number of Athletes Over the Years in {sport} from {country}')
-st.plotly_chart(fig_line)
+        st.plotly_chart(fig2, use_container_width=True)
+        
+### TAB 3: GEOGRAPHIC DISTRIBUTION
 
-# Plotting - Donut Chart for Gender Distribution
-st.header("Gender Distribution")
-gender_counts = filtered_data['Sex'].value_counts()
-fig_donut = go.Figure(data=[go.Pie(labels=gender_counts.index, values=gender_counts.values, hole=.3)])
-fig_donut.update_layout(title_text=f'Gender Distribution in {sport} from {country}')
-st.plotly_chart(fig_donut)
+# Calculate the count of athletes by birth country
+athlete_counts = data['NOC'].value_counts().reset_index()
+athlete_counts.columns = ['NOC', 'Count']
 
+# Add the title of the plot
+tab3.subheader("Geographic Distribution of Olympic Athletes' Birth Countries")
+
+# Create the map visualization
+fig_map = px.scatter_geo(
+    athlete_counts,
+    locations="NOC",
+    color="Count",
+    hover_name="NOC",
+    size="Count",
+    projection="natural earth",
+    title="Olympic Athletes' Birth Countries",
+)
+
+# Display the map
+tab3.plotly_chart(fig_map, use_container_width=True)
